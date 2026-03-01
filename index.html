@@ -738,12 +738,26 @@ function setWaveGenreDirect(genre) {
 
 async function startWave() {
   toast('Запускаем волну...');
-  const [it,ja]=await Promise.all([fetchItunes(waveGenre,0),fetchJamendo(waveGenre,0)]);
-  let tracks=[...(it||[]),...(ja||[])].sort(()=>Math.random()-.5);
-  if(!tracks.length){toast('Ничего не найдено');return;}
-  waveQueue=tracks; activeQueue=[...waveQueue]; currentSource='wave';
+  const query = waveGenre + ' music';
+  const [it, ja] = await Promise.all([
+    fetchItunes(query, 0),
+    fetchJamendo(waveGenre, 0).catch(() => [])
+  ]);
+  let tracks = [...(it || []), ...(ja || [])].sort(() => Math.random() - .5);
+  
+  // Fallback: если ничего — попробовать без " music"
+  if (!tracks.length) {
+    const [it2, ja2] = await Promise.all([
+      fetchItunes(waveGenre, 0),
+      fetchJamendo(waveGenre + ' music', 0).catch(() => [])
+    ]);
+    tracks = [...(it2 || []), ...(ja2 || [])].sort(() => Math.random() - .5);
+  }
+
+  if (!tracks.length) { toast('Ничего не найдено'); return; }
+  waveQueue = tracks; activeQueue = [...waveQueue]; currentSource = 'wave';
   renderWaveTracks();
-  document.getElementById('waveTracksTitle').style.display='block';
+  document.getElementById('waveTracksTitle').style.display = 'block';
   toast(`Волна: ${tracks.length} треков`);
   playTrack(0);
 }
